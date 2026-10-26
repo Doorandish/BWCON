@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
         });
         results.gemini = { status: 'missing_key' };
       } else {
-        addLog('TASK', 'DIAGNOSTIC', 'Initiating live probe to Google Gemini API across candidate models (gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-flash)...');
+        addLog('TASK', 'DIAGNOSTIC', 'Initiating live probe to Google Gemini API across candidate models (gemini-3.8-flash, gemini-3.1-pro-preview, gemini-3.6-flash)...');
         const probeResult = await probeGeminiConnectivity();
 
         if (probeResult.success) {

@@ -79,13 +79,13 @@ const systemNodes: SystemNode[] = [
   },
   {
     id: 'node-gemini',
-    label: 'Google Gemini 2.0 AI Engine',
+    label: 'Google Gemini 3.8 AI Engine',
     category: 'ai',
     status: 'configured',
     icon: '🤖',
     summary: 'Strategic matchmaking intelligence analyzing synergy scores, risks, competitive pros/cons, and estimated engagement budgets.',
     technical: {
-      stack: '@google/generative-ai (Gemini 2.0 Flash SDK)',
+      stack: '@google/generative-ai (Gemini 3.8 Flash SDK)',
       files: ['src/lib/services/gemini.ts'],
       contract: 'Input: (ICompanyChallenge, IStartup[]) -> Output: MatchResult[] { match_score, pros[], cons[], detailed_explanation, estimated_cost }',
       pipeline: 'Challenge & Startup aggregation -> Prompt engineering with strict schema guardrails -> LLM generation -> Markdown fence sanitization -> Strict JSON schema parser',
@@ -239,7 +239,7 @@ export default function SystemPage() {
                 Runtime: <strong className="text-white">{telemetry?.services?.runtime?.framework || 'Next.js 16'}</strong>
               </span>
               <span className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
-                AI Engine: <strong className="text-indigo-400">{telemetry?.services?.aiEngine?.provider || 'Gemini 2.0'}</strong>
+                AI Engine: <strong className="text-indigo-400">{telemetry?.services?.aiEngine?.provider || 'Gemini 3.8 Flash'}</strong>
               </span>
               <span className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 flex items-center gap-1.5">
                 DB State:{' '}

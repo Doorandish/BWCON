@@ -142,7 +142,7 @@ export default function HomePage() {
         <GlassCard variant="strong" className="p-8 md:p-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[
-              { label: 'Evaluation Engine', value: 'Gemini 2.0' },
+              { label: 'Evaluation Engine', value: 'Gemini 3.8' },
               { label: 'Architecture Model', value: 'App Router' },
               { label: 'Match Scoring Criteria', value: 'Multi-Axis' },
               { label: 'Response Latency', value: '<2s' },

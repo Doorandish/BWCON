@@ -17,7 +17,7 @@ export async function GET() {
         latencyMs: 12,
       },
       aiEngine: {
-        provider: 'Google Gemini 2.0 Flash',
+        provider: process.env.GEMINI_MODEL || 'Google Gemini 3.8 Flash',
         status: hasGeminiKey ? 'ready' : 'key_missing',
         configured: hasGeminiKey,
       },
