@@ -232,257 +232,265 @@ export default function StartupsPage() {
           </p>
         </motion.div>
 
-        {/* Form and JSON Import Side-by-Side Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Form and JSON Import Side-by-Side Symmetrical Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
           {/* ========================================================================= */}
-          {/* LEFT: MANUAL REGISTRATION FORM (lg:col-span-7) */}
+          {/* LEFT: MANUAL REGISTRATION FORM (50% width) */}
           {/* ========================================================================= */}
-          <div className="lg:col-span-7">
-            <GlassCard variant="strong">
-              <div className="flex items-center justify-between pb-4 mb-6 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">📝</span>
-                  <h2 className="text-lg font-bold text-white">Manual Venture Intake</h2>
+          <div className="h-full flex flex-col">
+            <GlassCard variant="strong" className="h-full flex flex-col justify-between" hover={false}>
+              <div className="flex-1 flex flex-col">
+                <div className="flex items-center justify-between pb-4 mb-5 border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">📝</span>
+                    <h2 className="text-lg font-bold text-white">Manual Venture Intake</h2>
+                  </div>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/10 text-slate-300 border border-white/10">
+                    Single Profile
+                  </span>
                 </div>
-                <span className="text-xs text-slate-400">Single Profile</span>
+
+                <form id="manual-startup-form" onSubmit={handleSubmit} className="flex-1 flex flex-col justify-between space-y-4">
+                  <div className="space-y-4">
+                    {/* Name & Industry */}
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="name" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                          Startup Name *
+                        </label>
+                        <input
+                          id="name"
+                          name="name"
+                          required
+                          className="glass-input"
+                          placeholder="e.g., QuantumVision Systems"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="industry" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                          Industry / Sector *
+                        </label>
+                        <input
+                          id="industry"
+                          name="industry"
+                          required
+                          className="glass-input"
+                          placeholder="e.g., CleanTech, Robotics, Industry 4.0"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                      <label htmlFor="description" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                        Executive Summary & Solution Description *
+                      </label>
+                      <textarea
+                        id="description"
+                        name="description"
+                        required
+                        rows={2}
+                        className="glass-input resize-none"
+                        placeholder="Describe your core product, value proposition, and customer problem solved..."
+                      />
+                    </div>
+
+                    {/* Technologies */}
+                    <div>
+                      <label htmlFor="technologies" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                        Core Technologies * <span className="text-slate-500 lowercase font-normal">(comma-separated)</span>
+                      </label>
+                      <input
+                        id="technologies"
+                        name="technologies"
+                        required
+                        className="glass-input"
+                        placeholder="e.g., Python, TensorFlow, Edge Computing, LoRaWAN"
+                      />
+                    </div>
+
+                    {/* Stage, Team Size, Funding */}
+                    <div className="grid sm:grid-cols-3 gap-3">
+                      <div>
+                        <label htmlFor="stage" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                          Maturity Stage *
+                        </label>
+                        <select id="stage" name="stage" required className="glass-input">
+                          <option value="" className="bg-slate-900">Select stage</option>
+                          {stages.map((s) => (
+                            <option key={s} value={s} className="bg-slate-900 capitalize">
+                              {s.toUpperCase()}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="teamSize" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                          Team Size *
+                        </label>
+                        <input
+                          id="teamSize"
+                          name="teamSize"
+                          type="number"
+                          min="1"
+                          required
+                          className="glass-input"
+                          placeholder="e.g., 18"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="fundingRaised" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                          Funding Raised ($)
+                        </label>
+                        <input
+                          id="fundingRaised"
+                          name="fundingRaised"
+                          type="number"
+                          min="0"
+                          className="glass-input"
+                          placeholder="e.g., 2500000"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Location, Website, Email */}
+                    <div className="grid sm:grid-cols-3 gap-3">
+                      <div>
+                        <label htmlFor="location" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                          Location *
+                        </label>
+                        <input
+                          id="location"
+                          name="location"
+                          required
+                          className="glass-input"
+                          placeholder="e.g., Stuttgart, Germany"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="website" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                          Website
+                        </label>
+                        <input
+                          id="website"
+                          name="website"
+                          type="url"
+                          className="glass-input"
+                          placeholder="https://example.com"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="contactEmail" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                          Contact Email *
+                        </label>
+                        <input
+                          id="contactEmail"
+                          name="contactEmail"
+                          type="email"
+                          required
+                          className="glass-input"
+                          placeholder="contact@startup.com"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Notifications */}
+                    {error && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs"
+                      >
+                        ⚠️ {error}
+                      </motion.div>
+                    )}
+
+                    {success && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs"
+                      >
+                        {success}
+                      </motion.div>
+                    )}
+                  </div>
+
+                  <div className="pt-2">
+                    <motion.button
+                      type="submit"
+                      disabled={isSubmitting}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                      className="glass-button w-full py-3.5 text-sm font-semibold disabled:opacity-50"
+                    >
+                      {isSubmitting ? 'Registering Startup...' : 'Register Startup'}
+                    </motion.button>
+                  </div>
+                </form>
               </div>
-
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Name & Industry */}
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="name" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                      Startup Name *
-                    </label>
-                    <input
-                      id="name"
-                      name="name"
-                      required
-                      className="glass-input"
-                      placeholder="e.g., QuantumVision Systems"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="industry" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                      Industry / Sector *
-                    </label>
-                    <input
-                      id="industry"
-                      name="industry"
-                      required
-                      className="glass-input"
-                      placeholder="e.g., CleanTech, Robotics, Industry 4.0"
-                    />
-                  </div>
-                </div>
-
-                {/* Description */}
-                <div>
-                  <label htmlFor="description" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                    Executive Summary & Solution Description *
-                  </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    required
-                    rows={3}
-                    className="glass-input resize-none"
-                    placeholder="Describe your core product, value proposition, and customer problem solved..."
-                  />
-                </div>
-
-                {/* Technologies */}
-                <div>
-                  <label htmlFor="technologies" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                    Core Technologies * <span className="text-slate-500 lowercase">(comma-separated)</span>
-                  </label>
-                  <input
-                    id="technologies"
-                    name="technologies"
-                    required
-                    className="glass-input"
-                    placeholder="e.g., Python, TensorFlow, Edge Computing, LoRaWAN"
-                  />
-                </div>
-
-                {/* Stage, Team Size, Funding */}
-                <div className="grid sm:grid-cols-3 gap-4">
-                  <div>
-                    <label htmlFor="stage" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                      Maturity Stage *
-                    </label>
-                    <select id="stage" name="stage" required className="glass-input">
-                      <option value="" className="bg-slate-900">Select stage</option>
-                      {stages.map((s) => (
-                        <option key={s} value={s} className="bg-slate-900 capitalize">
-                          {s.toUpperCase()}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="teamSize" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                      Team Size *
-                    </label>
-                    <input
-                      id="teamSize"
-                      name="teamSize"
-                      type="number"
-                      min="1"
-                      required
-                      className="glass-input"
-                      placeholder="e.g., 18"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="fundingRaised" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                      Funding Raised ($ USD)
-                    </label>
-                    <input
-                      id="fundingRaised"
-                      name="fundingRaised"
-                      type="number"
-                      min="0"
-                      className="glass-input"
-                      placeholder="e.g., 2500000"
-                    />
-                  </div>
-                </div>
-
-                {/* Location, Website, Email */}
-                <div className="grid sm:grid-cols-3 gap-4">
-                  <div>
-                    <label htmlFor="location" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                      Location *
-                    </label>
-                    <input
-                      id="location"
-                      name="location"
-                      required
-                      className="glass-input"
-                      placeholder="e.g., Stuttgart, Germany"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="website" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                      Website
-                    </label>
-                    <input
-                      id="website"
-                      name="website"
-                      type="url"
-                      className="glass-input"
-                      placeholder="https://example.com"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="contactEmail" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                      Contact Email *
-                    </label>
-                    <input
-                      id="contactEmail"
-                      name="contactEmail"
-                      type="email"
-                      required
-                      className="glass-input"
-                      placeholder="contact@startup.com"
-                    />
-                  </div>
-                </div>
-
-                {/* Notifications */}
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs"
-                  >
-                    ⚠️ {error}
-                  </motion.div>
-                )}
-
-                {success && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs"
-                  >
-                    {success}
-                  </motion.div>
-                )}
-
-                <motion.button
-                  type="submit"
-                  disabled={isSubmitting}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  className="glass-button w-full py-3 text-sm font-semibold disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Registering Startup...' : 'Register Startup'}
-                </motion.button>
-              </form>
             </GlassCard>
           </div>
 
           {/* ========================================================================= */}
-          {/* RIGHT: BATCH JSON IMPORT BESIDE FORM (lg:col-span-5) */}
+          {/* RIGHT: BATCH JSON IMPORT BESIDE FORM (50% width) */}
           {/* ========================================================================= */}
-          <div className="lg:col-span-5 space-y-6">
-            <GlassCard variant="strong">
-              <div className="flex items-center justify-between pb-4 mb-5 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">📁</span>
-                  <h2 className="text-lg font-bold text-white">Import JSON File</h2>
-                </div>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                  Bulk Ingestion
-                </span>
-              </div>
-
-              <div className="space-y-4">
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Upload a <code className="text-indigo-300 font-mono">.json</code> file or paste JSON data containing a list of startups. Snake_case or camelCase keys are both automatically mapped.
-                </p>
-
-                {/* File Dropzone */}
-                <div className="relative border-2 border-dashed border-white/20 hover:border-indigo-400/60 rounded-xl p-6 text-center transition-colors bg-white/[0.02]">
-                  <input
-                    type="file"
-                    accept=".json,application/json"
-                    onChange={handleFileChange}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    id="jsonFileInput"
-                  />
-                  <div className="space-y-2 pointer-events-none">
-                    <span className="text-3xl block">📤</span>
-                    <span className="text-xs font-semibold text-slate-200 block">
-                      {jsonFile ? jsonFile.name : 'Click to Browse or Drag JSON File'}
-                    </span>
-                    <span className="text-[11px] text-slate-500 block">
-                      Accepts standard startup JSON array or single object
-                    </span>
+          <div className="h-full flex flex-col">
+            <GlassCard variant="strong" className="h-full flex flex-col justify-between" hover={false}>
+              <div className="flex-1 flex flex-col">
+                <div className="flex items-center justify-between pb-4 mb-5 border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">📁</span>
+                    <h2 className="text-lg font-bold text-white">Import JSON File</h2>
                   </div>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                    Bulk Ingestion
+                  </span>
                 </div>
 
-                {/* Direct Paste / Preview Box */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label htmlFor="jsonTextarea" className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                      JSON Payload
-                    </label>
-                    {parsedPreviewCount !== null && (
-                      <span className="text-[11px] text-emerald-400 font-medium">
-                        ✓ {parsedPreviewCount} startup(s) detected
+                <div className="flex-1 flex flex-col space-y-4">
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Upload a <code className="text-indigo-300 font-mono">.json</code> file or paste JSON data containing a list of startups. Snake_case or camelCase keys are both automatically mapped.
+                  </p>
+
+                  {/* File Dropzone */}
+                  <div className="relative border-2 border-dashed border-white/20 hover:border-indigo-400/60 rounded-xl p-4 text-center transition-colors bg-white/[0.02]">
+                    <input
+                      type="file"
+                      accept=".json,application/json"
+                      onChange={handleFileChange}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      id="jsonFileInput"
+                    />
+                    <div className="space-y-1 pointer-events-none">
+                      <span className="text-2xl block">📤</span>
+                      <span className="text-xs font-semibold text-slate-200 block truncate">
+                        {jsonFile ? `Selected: ${jsonFile.name}` : 'Click to Browse or Drag JSON File'}
                       </span>
-                    )}
+                      <span className="text-[11px] text-slate-500 block">
+                        Accepts standard startup JSON array or single object
+                      </span>
+                    </div>
                   </div>
-                  <textarea
-                    id="jsonTextarea"
-                    value={jsonInput}
-                    onChange={(e) => handleJsonTextChange(e.target.value)}
-                    rows={6}
-                    className="glass-input font-mono text-xs resize-none"
-                    placeholder={`[
+
+                  {/* Direct Paste / Preview Box - Flexes vertically to match left card height */}
+                  <div className="flex-1 flex flex-col min-h-[190px]">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label htmlFor="jsonTextarea" className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                        JSON Payload
+                      </label>
+                      {parsedPreviewCount !== null && (
+                        <span className="text-[11px] text-emerald-400 font-medium">
+                          ✓ {parsedPreviewCount} startup(s) detected
+                        </span>
+                      )}
+                    </div>
+                    <textarea
+                      id="jsonTextarea"
+                      value={jsonInput}
+                      onChange={(e) => handleJsonTextChange(e.target.value)}
+                      className="glass-input font-mono text-xs resize-none flex-1 w-full min-h-[170px]"
+                      placeholder={`[
   {
     "startup_name": "SensorAI",
     "industry_sector": "Manufacturing",
@@ -494,37 +502,40 @@ export default function StartupsPage() {
     "lead_contact_email": "info@sensorai.de"
   }
 ]`}
-                  />
+                    />
+                  </div>
+
+                  {/* Feedback */}
+                  {jsonError && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs"
+                    >
+                      ⚠️ {jsonError}
+                    </motion.div>
+                  )}
+
+                  {jsonSuccess && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs"
+                    >
+                      {jsonSuccess}
+                    </motion.div>
+                  )}
                 </div>
+              </div>
 
-                {/* Feedback */}
-                {jsonError && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs"
-                  >
-                    ⚠️ {jsonError}
-                  </motion.div>
-                )}
-
-                {jsonSuccess && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs"
-                  >
-                    {jsonSuccess}
-                  </motion.div>
-                )}
-
-                {/* Import Action Button */}
+              {/* Import Action Button - Pinned at bottom to align with Left Form Button */}
+              <div className="pt-2">
                 <motion.button
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                   onClick={handleImportJson}
                   disabled={isImportingJson || (!jsonInput.trim() && !jsonFile)}
-                  className="glass-button w-full py-3 text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="glass-button w-full py-3.5 text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isImportingJson ? (
                     <>

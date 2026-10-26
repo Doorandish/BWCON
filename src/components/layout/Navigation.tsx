@@ -25,7 +25,7 @@ export default function Navigation() {
       className="fixed top-0 left-0 right-0 z-50 px-4 py-4"
     >
       <div className="max-w-7xl mx-auto">
-        <div className="glass-panel-strong px-6 py-3 flex items-center justify-between">
+        <div className="glass-panel-strong bg-slate-950/80 backdrop-blur-2xl px-6 py-3 flex items-center justify-between shadow-2xl shadow-black/40">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:shadow-indigo-500/50 transition-shadow">
               <span className="text-white font-bold text-sm">BW</span>
