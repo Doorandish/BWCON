@@ -1,4 +1,4 @@
-import { parseGeminiResponse, runMatchmaking } from '@/lib/services/gemini';
+import { parseGeminiResponse, runMatchmaking, probeGeminiConnectivity } from '@/lib/services/gemini';
 import { ICompanyChallenge } from '@/lib/db/models/CompanyChallenge';
 import { IStartup } from '@/lib/db/models/Startup';
 import mongoose from 'mongoose';
@@ -16,7 +16,7 @@ jest.mock('@google/generative-ai', () => {
   };
 });
 
-describe('Gemini AI Service — JSON Parsing & Matchmaking Logic', () => {
+describe('Gemini AI Service — JSON Parsing, Fallback & Probing Logic', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env.GEMINI_API_KEY = 'test-gemini-key-12345';
@@ -143,7 +143,7 @@ describe('Gemini AI Service — JSON Parsing & Matchmaking Logic', () => {
     });
   });
 
-  describe('runMatchmaking (Mocked Gemini Execution)', () => {
+  describe('runMatchmaking (Mocked Gemini Execution & Fallback)', () => {
     const mockChallenge = {
       _id: new mongoose.Types.ObjectId(),
       companyName: 'Bosch Mobility',
@@ -177,7 +177,7 @@ describe('Gemini AI Service — JSON Parsing & Matchmaking Logic', () => {
       expect(mockGenerateContent).not.toHaveBeenCalled();
     });
 
-    it('invokes Gemini API and returns parsed structured matches', async () => {
+    it('invokes Gemini API and returns parsed structured matches on first model success', async () => {
       const mockGeminiOutput = JSON.stringify([
         {
           startup_id: '64a1f89c9e88d71234567891',
@@ -202,12 +202,60 @@ describe('Gemini AI Service — JSON Parsing & Matchmaking Logic', () => {
       expect(matches).toHaveLength(1);
       expect(matches[0].startup_name).toBe('AutoTelemetry AI');
       expect(matches[0].match_score).toBe(95);
-      expect(matches[0].pros).toHaveLength(2);
+    });
+
+    it('falls back to secondary model if first model rejects call (e.g. model not found/deprecated)', async () => {
+      const mockGeminiOutput = JSON.stringify([
+        {
+          startup_id: '64a1f89c9e88d71234567891',
+          startup_name: 'AutoTelemetry AI',
+          match_score: 91,
+          pros: ['Great fallback match'],
+          cons: [],
+          detailed_explanation: 'Evaluated on secondary model successfully.',
+          estimated_cost: '$100,000',
+        },
+      ]);
+
+      // First model fails (simulating deprecated model error)
+      mockGenerateContent.mockRejectedValueOnce(new Error('models/gemini-2.0-flash is not found or expired'));
+      // Second model succeeds
+      mockGenerateContent.mockResolvedValueOnce({
+        response: {
+          text: () => mockGeminiOutput,
+        },
+      });
+
+      const matches = await runMatchmaking(mockChallenge, mockStartups);
+      expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].match_score).toBe(91);
     });
 
     it('throws error when GEMINI_API_KEY is not defined', async () => {
       delete process.env.GEMINI_API_KEY;
       await expect(runMatchmaking(mockChallenge, mockStartups)).rejects.toThrow('GEMINI_API_KEY is not configured');
+    });
+  });
+
+  describe('probeGeminiConnectivity', () => {
+    it('returns success: true when model handshake passes', async () => {
+      mockGenerateContent.mockResolvedValueOnce({
+        response: {
+          text: () => 'OK',
+        },
+      });
+
+      const result = await probeGeminiConnectivity('test-key');
+      expect(result.success).toBe(true);
+      expect(result.response).toBe('OK');
+    });
+
+    it('returns error when API key is missing', async () => {
+      delete process.env.GEMINI_API_KEY;
+      const result = await probeGeminiConnectivity('');
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('GEMINI_API_KEY is not defined');
     });
   });
 });

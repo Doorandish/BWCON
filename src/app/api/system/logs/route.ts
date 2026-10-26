@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getLogs, clearLogs, addLog, LogLevel } from '@/lib/services/logger';
 import mongoose from 'mongoose';
 import { connectDB } from '@/lib/db/connection';
+import { probeGeminiConnectivity } from '@/lib/services/gemini';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -68,15 +69,36 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Test Gemini key
+      // Test Gemini API live handshake
       if (!process.env.GEMINI_API_KEY) {
-        addLog('WARN', 'DIAGNOSTIC', 'Self-diagnostic: GEMINI_API_KEY is not defined. Matchmaking requires this key.', {
-          resolution: 'Obtain an API key from Google AI Studio and configure GEMINI_API_KEY in Render.',
+        addLog('WARN', 'DIAGNOSTIC', 'Self-diagnostic: GEMINI_API_KEY is not defined in process.env. AI Matchmaking will not function.', {
+          resolution: 'Obtain an API key from Google AI Studio (https://aistudio.google.com/) and configure GEMINI_API_KEY in your Render dashboard.',
         });
         results.gemini = { status: 'missing_key' };
       } else {
-        addLog('INFO', 'DIAGNOSTIC', 'Self-diagnostic: GEMINI_API_KEY detected and verified present.');
-        results.gemini = { status: 'configured', keyPrefix: process.env.GEMINI_API_KEY.slice(0, 6) + '...' };
+        addLog('TASK', 'DIAGNOSTIC', 'Initiating live probe to Google Gemini API across candidate models (gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-flash)...');
+        const probeResult = await probeGeminiConnectivity();
+
+        if (probeResult.success) {
+          addLog('INFO', 'DIAGNOSTIC', `Self-diagnostic: Google Gemini API handshake SUCCESSFUL using model "${probeResult.modelUsed}".`, {
+            model: probeResult.modelUsed,
+            handshakeResponse: probeResult.response,
+          });
+          results.gemini = {
+            status: 'connected',
+            model: probeResult.modelUsed,
+            sampleResponse: probeResult.response,
+          };
+        } else {
+          addLog('ERROR', 'DIAGNOSTIC', `Self-diagnostic: Google Gemini API handshake FAILED: ${probeResult.error}`, {
+            error: probeResult.error,
+            hint: 'Verify GEMINI_API_KEY validity, project billing, or model quota on Google AI Studio.',
+          });
+          results.gemini = {
+            status: 'failed',
+            error: probeResult.error,
+          };
+        }
       }
 
       addLog('INFO', 'DIAGNOSTIC', 'System self-diagnostic probe complete.');

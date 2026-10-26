@@ -6,7 +6,7 @@ import { addLog } from '@/lib/services/logger';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 if (!GEMINI_API_KEY) {
-  console.warn('GEMINI_API_KEY is not set. AI matchmaking will not function.');
+  console.warn('GEMINI_API_KEY is not set. AI matchmaking will not function until configured.');
 }
 
 export interface MatchResult {
@@ -18,6 +18,15 @@ export interface MatchResult {
   detailed_explanation: string;
   estimated_cost: string;
 }
+
+// Ordered list of candidate models for maximum resilience and cross-version compatibility
+export const DEFAULT_CANDIDATE_MODELS = [
+  process.env.GEMINI_MODEL,
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-2.5-pro',
+].filter(Boolean) as string[];
 
 function buildMatchmakingPrompt(
   challenge: ICompanyChallenge,
@@ -127,6 +136,48 @@ export function parseGeminiResponse(responseText: string): MatchResult[] {
   });
 }
 
+/**
+ * Probes the Gemini API with a lightweight handshake to verify key validity and model availability
+ */
+export async function probeGeminiConnectivity(apiKey?: string): Promise<{
+  success: boolean;
+  modelUsed?: string;
+  response?: string;
+  error?: string;
+}> {
+  const key = apiKey || process.env.GEMINI_API_KEY || GEMINI_API_KEY;
+  if (!key) {
+    return {
+      success: false,
+      error: 'GEMINI_API_KEY is not defined in process.env.',
+    };
+  }
+
+  const genAI = new GoogleGenerativeAI(key);
+  let lastError: string = 'Unknown error';
+
+  for (const modelName of DEFAULT_CANDIDATE_MODELS) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const testResult = await model.generateContent('Respond with "OK"');
+      const text = testResult.response.text();
+      return {
+        success: true,
+        modelUsed: modelName,
+        response: text.trim(),
+      };
+    } catch (err: unknown) {
+      lastError = err instanceof Error ? err.message : String(err);
+      addLog('WARN', 'GEMINI_AI', `Probe on model "${modelName}" failed: ${lastError}. Attempting fallback...`);
+    }
+  }
+
+  return {
+    success: false,
+    error: `All candidate models failed. Last error: ${lastError}`,
+  };
+}
+
 export async function runMatchmaking(
   challenge: ICompanyChallenge,
   startups: IStartup[]
@@ -148,37 +199,43 @@ export async function runMatchmaking(
     return [];
   }
 
-  addLog('TASK', 'GEMINI_AI', `Running Gemini 2.0 Flash matchmaking evaluation for challenge "${challenge.challengeTitle}" across ${startups.length} candidate startup(s)...`, {
-    challengeTitle: challenge.challengeTitle,
-    company: challenge.companyName,
-    candidateCount: startups.length,
-    model: 'gemini-2.0-flash',
-  });
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const prompt = buildMatchmakingPrompt(challenge, startups);
 
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  let lastError: Error | null = null;
 
-    const prompt = buildMatchmakingPrompt(challenge, startups);
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text();
-
-    const matches = parseGeminiResponse(text);
-
-    addLog('INFO', 'GEMINI_AI', `Gemini successfully evaluated and generated ${matches.length} strategic match(es).`, {
-      challengeTitle: challenge.challengeTitle,
-      matchesReturned: matches.length,
-      topScore: matches[0]?.match_score || 0,
+  for (const modelName of DEFAULT_CANDIDATE_MODELS) {
+    addLog('TASK', 'GEMINI_AI', `Attempting evaluation with model "${modelName}" for challenge "${challenge.challengeTitle}"...`, {
+      model: modelName,
+      candidateCount: startups.length,
     });
 
-    return matches;
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    addLog('ERROR', 'GEMINI_AI', `Gemini matchmaking evaluation failed: ${errorMsg}`, {
-      rawError: errorMsg,
-      challengeTitle: challenge.challengeTitle,
-    });
-    throw err;
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      const text = response.text();
+
+      const matches = parseGeminiResponse(text);
+
+      addLog('INFO', 'GEMINI_AI', `Gemini (${modelName}) successfully evaluated and generated ${matches.length} strategic match(es).`, {
+        modelUsed: modelName,
+        challengeTitle: challenge.challengeTitle,
+        matchesReturned: matches.length,
+        topScore: matches[0]?.match_score || 0,
+      });
+
+      return matches;
+    } catch (err: unknown) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      addLog('WARN', 'GEMINI_AI', `Model "${modelName}" evaluation failed: ${lastError.message}. Trying next candidate model...`, {
+        failedModel: modelName,
+        error: lastError.message,
+      });
+    }
   }
+
+  const finalMessage = `All Gemini candidate models failed. Last error: ${lastError?.message || 'Unknown'}`;
+  addLog('ERROR', 'GEMINI_AI', finalMessage);
+  throw new Error(finalMessage);
 }
