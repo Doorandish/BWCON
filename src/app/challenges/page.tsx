@@ -262,12 +262,10 @@ export default function ChallengesPage() {
               </motion.div>
             )}
 
-            <motion.button
+            <button
               type="submit"
               disabled={isSubmitting}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              className="glass-button w-full py-3.5 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              className="glass-button w-full py-3.5 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
@@ -280,7 +278,7 @@ export default function ChallengesPage() {
               ) : (
                 'Publish Corporate Challenge'
               )}
-            </motion.button>
+            </button>
           </form>
         </GlassCard>
       </div>

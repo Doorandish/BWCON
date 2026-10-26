@@ -417,15 +417,13 @@ export default function StartupsPage() {
                   </div>
 
                   <div className="pt-2">
-                    <motion.button
+                    <button
                       type="submit"
                       disabled={isSubmitting}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.99 }}
-                      className="glass-button w-full py-3.5 text-sm font-semibold disabled:opacity-50"
+                      className="glass-button w-full py-3.5 text-sm font-semibold disabled:opacity-50 transition-colors duration-200"
                     >
                       {isSubmitting ? 'Registering Startup...' : 'Register Startup'}
-                    </motion.button>
+                    </button>
                   </div>
                 </form>
               </div>
@@ -530,12 +528,10 @@ export default function StartupsPage() {
 
               {/* Import Action Button - Pinned at bottom to align with Left Form Button */}
               <div className="pt-2">
-                <motion.button
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
+                <button
                   onClick={handleImportJson}
                   disabled={isImportingJson || (!jsonInput.trim() && !jsonFile)}
-                  className="glass-button w-full py-3.5 text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="glass-button w-full py-3.5 text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2 transition-colors duration-200"
                 >
                   {isImportingJson ? (
                     <>
@@ -548,7 +544,7 @@ export default function StartupsPage() {
                   ) : (
                     <>📥 Import JSON Startups</>
                   )}
-                </motion.button>
+                </button>
               </div>
             </GlassCard>
           </div>

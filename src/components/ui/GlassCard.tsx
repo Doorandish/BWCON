@@ -1,9 +1,8 @@
 'use client';
 
-import { motion, type HTMLMotionProps } from 'framer-motion';
-import { type ReactNode } from 'react';
+import { type ReactNode, type HTMLAttributes } from 'react';
 
-interface GlassCardProps extends Omit<HTMLMotionProps<'div'>, 'children'> {
+interface GlassCardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   variant?: 'default' | 'strong' | 'subtle';
   hover?: boolean;
@@ -19,18 +18,18 @@ const variantStyles = {
 export default function GlassCard({
   children,
   variant = 'default',
-  hover = true,
+  hover = false,
   className = '',
   ...props
 }: GlassCardProps) {
   return (
-    <motion.div
-      whileHover={hover ? { y: -4, scale: 1.01 } : undefined}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-      className={`${variantStyles[variant]} p-6 ${className}`}
+    <div
+      className={`${variantStyles[variant]} p-6 transition-all duration-200 ${
+        hover ? 'hover:border-white/30 hover:bg-white/[0.09]' : ''
+      } ${className}`}
       {...props}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

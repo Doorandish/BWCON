@@ -450,10 +450,8 @@ export default function SystemPage() {
             {systemNodes.map((node) => {
               const isSelected = selectedNode.id === node.id;
               return (
-                <motion.div
+                <div
                   key={node.id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
                   onClick={() => setSelectedNode(node)}
                   className="cursor-pointer"
                 >
@@ -480,7 +478,7 @@ export default function SystemPage() {
                       <span>→</span>
                     </div>
                   </GlassCard>
-                </motion.div>
+                </div>
               );
             })}
           </div>

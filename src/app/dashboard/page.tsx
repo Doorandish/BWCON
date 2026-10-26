@@ -221,12 +221,10 @@ export default function DashboardPage() {
               )}
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            <button
               onClick={handleRunMatchmaking}
               disabled={!selectedChallengeId || isMatching}
-              className="glass-button py-3 px-6 text-sm font-semibold whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20"
+              className="glass-button py-3 px-6 text-sm font-semibold whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20 transition-colors duration-200"
             >
               {isMatching ? (
                 <span className="flex items-center gap-2">
@@ -239,7 +237,7 @@ export default function DashboardPage() {
               ) : (
                 '🚀 Run Gemini AI Matchmaking'
               )}
-            </motion.button>
+            </button>
           </div>
 
           {activeChallenge && (
@@ -338,7 +336,7 @@ export default function DashboardPage() {
               </div>
             </motion.div>
 
-            {/* Skeleton Match Cards (Pre-rendered while matching) */}
+            {/* Skeleton Match Cards (Pre-rendered in vertical stack while matching) */}
             <div className="space-y-4">
               <div className="flex items-center justify-between text-xs text-slate-400">
                 <span className="flex items-center gap-2">
@@ -347,7 +345,7 @@ export default function DashboardPage() {
                 </span>
                 <span>Pre-filter active: max 10 candidates</span>
               </div>
-              <MatchSkeleton count={4} />
+              <MatchSkeleton count={3} />
             </div>
           </div>
         ) : matches.length > 0 ? (
@@ -356,27 +354,30 @@ export default function DashboardPage() {
               <h2 className="text-xl md:text-2xl font-bold tracking-tight">
                 AI Matchmaking Results (<span className="gradient-text">{matches.length}</span> Startups Evaluated)
               </h2>
-              <span className="text-xs text-slate-400">Ranked by Strategic Alignment Score</span>
+              <span className="text-xs text-slate-400">Strictly Ranked by Match Score (Descending)</span>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-              {matches.map((match, index) => (
-                <MatchCard
-                  key={match._id}
-                  startupName={match.startupId?.name || 'Venture Candidate'}
-                  startupIndustry={match.startupId?.industry || 'Cross-Sector'}
-                  startupStage={match.startupId?.stage || 'Maturity Unknown'}
-                  matchScore={match.matchScore}
-                  technicalScore={match.technicalScore}
-                  maturityScore={match.maturityScore}
-                  budgetScore={match.budgetScore}
-                  pros={match.pros || []}
-                  cons={match.cons || []}
-                  detailedExplanation={match.detailedExplanation}
-                  estimatedCost={match.estimatedCost}
-                  index={index}
-                />
-              ))}
+            {/* Vertical List Layout for Results */}
+            <div className="flex flex-col gap-6">
+              {[...matches]
+                .sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
+                .map((match, index) => (
+                  <MatchCard
+                    key={match._id}
+                    startupName={match.startupId?.name || 'Venture Candidate'}
+                    startupIndustry={match.startupId?.industry || 'Cross-Sector'}
+                    startupStage={match.startupId?.stage || 'Maturity Unknown'}
+                    matchScore={match.matchScore}
+                    technicalScore={match.technicalScore}
+                    maturityScore={match.maturityScore}
+                    budgetScore={match.budgetScore}
+                    pros={match.pros || []}
+                    cons={match.cons || []}
+                    detailedExplanation={match.detailedExplanation}
+                    estimatedCost={match.estimatedCost}
+                    index={index}
+                  />
+                ))}
             </div>
           </div>
         ) : (

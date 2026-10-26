@@ -61,31 +61,25 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link href="/challenges">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-                className="glass-button text-base px-8 py-3.5 shadow-xl shadow-indigo-500/25"
+              <button
+                className="glass-button text-base px-8 py-3.5 shadow-xl shadow-indigo-500/25 transition-colors duration-200"
               >
                 Post Corporate Challenge
-              </motion.button>
+              </button>
             </Link>
             <Link href="/startups">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-                className="px-8 py-3.5 rounded-xl border border-white/20 text-white bg-white/5 backdrop-blur-md hover:bg-white/10 transition-colors text-base font-medium"
+              <button
+                className="px-8 py-3.5 rounded-xl border border-white/20 text-white bg-white/5 backdrop-blur-md hover:bg-white/10 transition-colors duration-200 text-base font-medium"
               >
                 Register Startup
-              </motion.button>
+              </button>
             </Link>
             <Link href="/dashboard">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-                className="px-8 py-3.5 rounded-xl border border-indigo-500/40 text-indigo-300 bg-indigo-500/10 backdrop-blur-md hover:bg-indigo-500/20 transition-colors text-base font-medium"
+              <button
+                className="px-8 py-3.5 rounded-xl border border-indigo-500/40 text-indigo-300 bg-indigo-500/10 backdrop-blur-md hover:bg-indigo-500/20 transition-colors duration-200 text-base font-medium"
               >
                 View Dashboard
-              </motion.button>
+              </button>
             </Link>
           </div>
         </motion.div>
@@ -118,7 +112,7 @@ export default function HomePage() {
               <Link href={feature.href} className="block h-full">
                 <GlassCard variant="strong" className="h-full group cursor-pointer flex flex-col justify-between">
                   <div>
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform`}>
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center text-2xl mb-4 group-hover:brightness-110 transition-all`}>
                       {feature.icon}
                     </div>
                     <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
