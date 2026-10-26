@@ -18,6 +18,9 @@ interface Challenge {
 interface MatchData {
   _id: string;
   matchScore: number;
+  technicalScore?: number;
+  maturityScore?: number;
+  budgetScore?: number;
   pros: string[];
   cons: string[];
   detailedExplanation: string;
@@ -249,6 +252,9 @@ export default function DashboardPage() {
                   startupIndustry={match.startupId?.industry || 'Cross-Sector'}
                   startupStage={match.startupId?.stage || 'Maturity Unknown'}
                   matchScore={match.matchScore}
+                  technicalScore={match.technicalScore}
+                  maturityScore={match.maturityScore}
+                  budgetScore={match.budgetScore}
                   pros={match.pros || []}
                   cons={match.cons || []}
                   detailedExplanation={match.detailedExplanation}

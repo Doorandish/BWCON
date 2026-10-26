@@ -10,6 +10,9 @@ interface MatchCardProps {
   startupIndustry: string;
   startupStage: string;
   matchScore: number;
+  technicalScore?: number;
+  maturityScore?: number;
+  budgetScore?: number;
   pros: string[];
   cons: string[];
   detailedExplanation: string;
@@ -22,6 +25,9 @@ export default function MatchCard({
   startupIndustry,
   startupStage,
   matchScore,
+  technicalScore,
+  maturityScore,
+  budgetScore,
   pros,
   cons,
   detailedExplanation,
@@ -36,7 +42,7 @@ export default function MatchCard({
     >
       <GlassCard variant="strong" className="overflow-hidden">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 mb-6">
+        <div className="flex items-start justify-between gap-4 mb-4">
           <div className="flex-1">
             <h3 className="text-xl font-bold text-white mb-1">{startupName}</h3>
             <div className="flex items-center gap-3">
@@ -50,6 +56,42 @@ export default function MatchCard({
           </div>
           <CircularProgress value={matchScore} size={90} strokeWidth={6} />
         </div>
+
+        {/* Multi-Dimensional Scoring Transparency */}
+        {(technicalScore !== undefined || maturityScore !== undefined || budgetScore !== undefined) && (
+          <div className="grid grid-cols-3 gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/10 mb-5">
+            <div className="text-center">
+              <span className="block text-[10px] uppercase font-semibold text-slate-400">Technical Synergy</span>
+              <span className="text-base font-bold text-indigo-400">{technicalScore ?? matchScore}%</span>
+              <div className="w-full bg-white/10 rounded-full h-1 mt-1 overflow-hidden">
+                <div
+                  className="bg-indigo-500 h-full rounded-full transition-all duration-700"
+                  style={{ width: `${technicalScore ?? matchScore}%` }}
+                />
+              </div>
+            </div>
+            <div className="text-center">
+              <span className="block text-[10px] uppercase font-semibold text-slate-400">Team & Maturity</span>
+              <span className="text-base font-bold text-purple-400">{maturityScore ?? matchScore}%</span>
+              <div className="w-full bg-white/10 rounded-full h-1 mt-1 overflow-hidden">
+                <div
+                  className="bg-purple-500 h-full rounded-full transition-all duration-700"
+                  style={{ width: `${maturityScore ?? matchScore}%` }}
+                />
+              </div>
+            </div>
+            <div className="text-center">
+              <span className="block text-[10px] uppercase font-semibold text-slate-400">Budget Fit</span>
+              <span className="text-base font-bold text-emerald-400">{budgetScore ?? matchScore}%</span>
+              <div className="w-full bg-white/10 rounded-full h-1 mt-1 overflow-hidden">
+                <div
+                  className="bg-emerald-500 h-full rounded-full transition-all duration-700"
+                  style={{ width: `${budgetScore ?? matchScore}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Accordions */}
         <div className="space-y-2">

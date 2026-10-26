@@ -58,4 +58,25 @@ describe('Match Model Validation', () => {
     const error = match.validateSync();
     expect(error?.errors.estimatedCost).toBeDefined();
   });
+
+  it('validates and stores multi-dimensional breakdown scores', () => {
+    const match = new Match({
+      ...validData,
+      technicalScore: 95,
+      maturityScore: 85,
+      budgetScore: 80,
+    });
+    expect(match.validateSync()).toBeUndefined();
+    expect(match.technicalScore).toBe(95);
+    expect(match.maturityScore).toBe(85);
+    expect(match.budgetScore).toBe(80);
+  });
+
+  it('enforces boundaries for breakdown scores (0 to 100)', () => {
+    const invalidTech = new Match({ ...validData, technicalScore: -1 });
+    expect(invalidTech.validateSync()?.errors.technicalScore).toBeDefined();
+
+    const overMaxBudget = new Match({ ...validData, budgetScore: 101 });
+    expect(overMaxBudget.validateSync()?.errors.budgetScore).toBeDefined();
+  });
 });

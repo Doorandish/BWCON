@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db/connection';
 import CompanyChallenge from '@/lib/db/models/CompanyChallenge';
-import Startup from '@/lib/db/models/Startup';
+import Startup, { IStartup } from '@/lib/db/models/Startup';
 import Match from '@/lib/db/models/Match';
 import { runMatchmaking } from '@/lib/services/gemini';
+import { addLog } from '@/lib/services/logger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -54,8 +55,39 @@ export async function POST(request: NextRequest) {
     challenge.status = 'matching';
     await challenge.save();
 
-    // Fetch all startups
-    const startups = await Startup.find();
+    // Context Window Protection (Pre-Filtering)
+    // 1. Extract industry keywords from the challenge
+    const industryTokens = (challenge.industry || '')
+      .split(/[,/&|]+/)
+      .map((t) => t.trim())
+      .filter((t) => t.length > 2);
+
+    let startups: IStartup[] = [];
+
+    if (industryTokens.length > 0) {
+      const industryRegexes = industryTokens.map((t) => new RegExp(t, 'i'));
+      startups = await Startup.find({
+        $or: [
+          { industry: { $in: industryRegexes } },
+          { description: { $in: industryRegexes } },
+        ],
+      })
+        .sort({ updatedAt: -1 })
+        .limit(50);
+    }
+
+    // 2. Broaden to top 50 most active startups if specific filter yields under 5
+    if (startups.length < 5) {
+      startups = await Startup.find()
+        .sort({ updatedAt: -1 })
+        .limit(50);
+    }
+
+    addLog('INFO', 'API_GATEWAY', `Pre-filtered ${startups.length} startup candidate(s) within token budget for challenge "${challenge.challengeTitle}".`, {
+      challengeIndustry: challenge.industry,
+      candidateCount: startups.length,
+      tokenProtectionActive: true,
+    });
 
     if (startups.length === 0) {
       challenge.status = 'open';
@@ -66,19 +98,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Run AI matchmaking
+    // Run AI matchmaking with Native Structured Outputs
     const matchResults = await runMatchmaking(challenge, startups);
 
     // Delete previous matches for this challenge
     await Match.deleteMany({ challengeId: challenge._id });
 
-    // Save new matches
+    // Save new matches with multi-dimensional scoring breakdown
     const savedMatches = await Promise.all(
       matchResults.map(async (result) => {
         const match = await Match.create({
           challengeId: challenge._id,
           startupId: result.startup_id,
           matchScore: result.match_score,
+          technicalScore: result.technical_score,
+          maturityScore: result.maturity_score,
+          budgetScore: result.budget_score,
           pros: result.pros,
           cons: result.cons,
           detailedExplanation: result.detailed_explanation,

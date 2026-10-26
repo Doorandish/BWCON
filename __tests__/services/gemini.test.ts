@@ -1,18 +1,27 @@
-import { parseGeminiResponse, runMatchmaking, probeGeminiConnectivity } from '@/lib/services/gemini';
+import { parseGeminiResponse, runMatchmaking, probeGeminiConnectivity, matchmakingResponseSchema } from '@/lib/services/gemini';
 import { ICompanyChallenge } from '@/lib/db/models/CompanyChallenge';
 import { IStartup } from '@/lib/db/models/Startup';
 import mongoose from 'mongoose';
 
 // Mock the GoogleGenerativeAI SDK
 const mockGenerateContent = jest.fn();
+const mockGetGenerativeModel = jest.fn().mockImplementation(() => ({
+  generateContent: mockGenerateContent,
+}));
 
 jest.mock('@google/generative-ai', () => {
   return {
     GoogleGenerativeAI: jest.fn().mockImplementation(() => ({
-      getGenerativeModel: jest.fn().mockReturnValue({
-        generateContent: mockGenerateContent,
-      }),
+      getGenerativeModel: mockGetGenerativeModel,
     })),
+    SchemaType: {
+      STRING: 'string',
+      NUMBER: 'number',
+      INTEGER: 'integer',
+      BOOLEAN: 'boolean',
+      ARRAY: 'array',
+      OBJECT: 'object',
+    },
   };
 });
 
@@ -38,14 +47,39 @@ describe('Gemini AI Service — JSON Parsing, Fallback & Probing Logic', () => {
       },
     ]);
 
-    it('successfully parses clean JSON array', () => {
-      const results = parseGeminiResponse(validJsonArray);
+    it('successfully parses clean JSON array with multi-dimensional scores', () => {
+      const detailedJson = JSON.stringify([
+        {
+          startup_id: '64a1f89c9e88d71234567890',
+          startup_name: 'QuantumVision Systems',
+          technical_score: 96,
+          maturity_score: 88,
+          budget_score: 85,
+          match_score: 91,
+          pros: [
+            'Direct experience with industrial edge inference',
+            'Proven integration with Siemens PLC environments',
+          ],
+          cons: ['Higher deployment cost'],
+          detailed_explanation: 'Outstanding alignment on core latency and sensor processing requirements.',
+          estimated_cost: '$75,000 - $120,000',
+        },
+      ]);
+      const results = parseGeminiResponse(detailedJson);
       expect(results).toHaveLength(1);
       expect(results[0].startup_name).toBe('QuantumVision Systems');
-      expect(results[0].match_score).toBe(92);
+      expect(results[0].match_score).toBe(91);
+      expect(results[0].technical_score).toBe(96);
+      expect(results[0].maturity_score).toBe(88);
+      expect(results[0].budget_score).toBe(85);
       expect(results[0].pros).toHaveLength(2);
       expect(results[0].cons).toHaveLength(1);
       expect(results[0].estimated_cost).toBe('$75,000 - $120,000');
+    });
+
+    it('enforces schema contract and structure', () => {
+      expect(matchmakingResponseSchema).toBeDefined();
+      expect(matchmakingResponseSchema.type).toBe('array');
     });
 
     it('strips markdown code blocks (```json ... ```)', () => {
@@ -198,6 +232,14 @@ describe('Gemini AI Service — JSON Parsing, Fallback & Probing Logic', () => {
 
       const matches = await runMatchmaking(mockChallenge, mockStartups);
 
+      expect(mockGetGenerativeModel).toHaveBeenCalledWith(
+        expect.objectContaining({
+          generationConfig: expect.objectContaining({
+            responseMimeType: 'application/json',
+            responseSchema: matchmakingResponseSchema,
+          }),
+        })
+      );
       expect(mockGenerateContent).toHaveBeenCalledTimes(1);
       expect(matches).toHaveLength(1);
       expect(matches[0].startup_name).toBe('AutoTelemetry AI');

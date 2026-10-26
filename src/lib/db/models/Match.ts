@@ -4,6 +4,9 @@ export interface IMatch extends Document {
   challengeId: mongoose.Types.ObjectId;
   startupId: mongoose.Types.ObjectId;
   matchScore: number;
+  technicalScore: number;
+  maturityScore: number;
+  budgetScore: number;
   pros: string[];
   cons: string[];
   detailedExplanation: string;
@@ -18,6 +21,9 @@ const MatchSchema = new Schema<IMatch>(
     challengeId: { type: Schema.Types.ObjectId, ref: 'CompanyChallenge', required: [true, 'Challenge ID is required'], index: true },
     startupId: { type: Schema.Types.ObjectId, ref: 'Startup', required: [true, 'Startup ID is required'], index: true },
     matchScore: { type: Number, required: [true, 'Match score is required'], min: [0, 'Score cannot be below 0'], max: [100, 'Score cannot exceed 100'] },
+    technicalScore: { type: Number, default: 0, min: 0, max: 100 },
+    maturityScore: { type: Number, default: 0, min: 0, max: 100 },
+    budgetScore: { type: Number, default: 0, min: 0, max: 100 },
     pros: { type: [String], required: [true, 'Pros are required'], validate: { validator: (v: string[]) => v.length > 0, message: 'At least one pro must be listed' } },
     cons: { type: [String], default: [] },
     detailedExplanation: { type: String, required: [true, 'Detailed explanation is required'] },

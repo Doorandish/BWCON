@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, SchemaType, type ResponseSchema } from '@google/generative-ai';
 import { IStartup } from '@/lib/db/models/Startup';
 import { ICompanyChallenge } from '@/lib/db/models/CompanyChallenge';
 import { addLog } from '@/lib/services/logger';
@@ -12,12 +12,58 @@ if (!GEMINI_API_KEY) {
 export interface MatchResult {
   startup_id: string;
   startup_name: string;
+  technical_score: number;
+  maturity_score: number;
+  budget_score: number;
   match_score: number;
   pros: string[];
   cons: string[];
   detailed_explanation: string;
   estimated_cost: string;
 }
+
+/**
+ * Strict Native JSON Response Schema enforced at the Gemini API level
+ */
+export const matchmakingResponseSchema: ResponseSchema = {
+  type: SchemaType.ARRAY,
+  description: 'Evaluated matches between corporate challenge and candidate startups with multi-dimensional scoring',
+  items: {
+    type: SchemaType.OBJECT,
+    properties: {
+      startup_id: { type: SchemaType.STRING, description: 'Exact candidate startup ID' },
+      startup_name: { type: SchemaType.STRING, description: 'Candidate startup name' },
+      technical_score: { type: SchemaType.INTEGER, description: 'Technical capability and stack synergy score (0-100)' },
+      maturity_score: { type: SchemaType.INTEGER, description: 'Team readiness, stage, and operational track record score (0-100)' },
+      budget_score: { type: SchemaType.INTEGER, description: 'Budget and engagement cost fit score (0-100)' },
+      match_score: { type: SchemaType.INTEGER, description: 'Weighted composite match score (0-100)' },
+      pros: {
+        type: SchemaType.ARRAY,
+        items: { type: SchemaType.STRING },
+        description: 'Key strategic synergies and advantages (2-5 items)',
+      },
+      cons: {
+        type: SchemaType.ARRAY,
+        items: { type: SchemaType.STRING },
+        description: 'Key risks or integration challenges (1-3 items)',
+      },
+      detailed_explanation: { type: SchemaType.STRING, description: 'Detailed strategic fit rationale (2-4 sentences)' },
+      estimated_cost: { type: SchemaType.STRING, description: 'Estimated project engagement budget range (e.g., "$50,000 - $120,000")' },
+    },
+    required: [
+      'startup_id',
+      'startup_name',
+      'technical_score',
+      'maturity_score',
+      'budget_score',
+      'match_score',
+      'pros',
+      'cons',
+      'detailed_explanation',
+      'estimated_cost',
+    ],
+  },
+};
 
 // Ordered list of candidate models for maximum resilience and cross-version compatibility
 export const DEFAULT_CANDIDATE_MODELS = [
@@ -45,7 +91,7 @@ function buildMatchmakingPrompt(
     location: s.location,
   }));
 
-  return `You are an expert corporate-startup matchmaking evaluator. Analyze the following corporate challenge and available startups. Return a JSON array of matches.
+  return `You are an expert corporate-startup matchmaking evaluator. Analyze the following corporate challenge and available startups.
 
 CORPORATE CHALLENGE:
 - Company: ${challenge.companyName}
@@ -61,35 +107,22 @@ CORPORATE CHALLENGE:
 AVAILABLE STARTUPS:
 ${JSON.stringify(startupData, null, 2)}
 
-INSTRUCTIONS:
-1. Evaluate each startup against the corporate challenge.
-2. Only include startups with a match_score >= 30.
-3. For each matched startup, provide:
-   - startup_id: The exact startup ID string
-   - startup_name: The startup's name
-   - match_score: A number from 0-100 based on alignment
-   - pros: An array of 2-5 specific advantages
-   - cons: An array of 1-3 specific risks or disadvantages
-   - detailed_explanation: A 2-4 sentence strategic fit analysis
-   - estimated_cost: An estimated engagement cost range string (e.g., "$50,000 - $150,000")
-
-RESPOND WITH ONLY A VALID JSON ARRAY. No markdown, no explanation outside the JSON.
-Example format:
-[
-  {
-    "startup_id": "abc123",
-    "startup_name": "TechStartup",
-    "match_score": 85,
-    "pros": ["Strong tech alignment", "Experienced team"],
-    "cons": ["Limited funding history"],
-    "detailed_explanation": "This startup aligns well because...",
-    "estimated_cost": "$50,000 - $100,000"
-  }
-]`;
+INSTRUCTIONS & SCORING METHODOLOGY:
+1. Multi-Dimensional Scoring (0-100 per dimension):
+   - technical_score: Depth of technological synergy, stack alignment (${challenge.requiredTechnologies.join(', ') || 'general'}), and feasibility of achieving: "${challenge.desiredOutcome}".
+   - maturity_score: Operational readiness, team capacity (${challenge.preferredStartupStage.join(', ') || 'any stage'}), and ability to deliver within ${challenge.timeline}.
+   - budget_score: Commercial viability and alignment with corporate budget of $${challenge.budget.toLocaleString()}.
+2. Weighted Composite Score:
+   Calculate match_score strictly using this formula:
+   match_score = Math.round((0.45 * technical_score) + (0.35 * maturity_score) + (0.20 * budget_score))
+3. Threshold:
+   Only return startups where match_score >= 30.
+4. Output Format:
+   Return a JSON array adhering to the native schema.`;
 }
 
 export function parseGeminiResponse(responseText: string): MatchResult[] {
-  // Strip markdown code fences if present
+  // Strip markdown code fences if present (fallback for legacy or edge-case completions)
   let cleaned = responseText.trim();
   if (cleaned.startsWith('```json')) {
     cleaned = cleaned.slice(7);
@@ -107,11 +140,25 @@ export function parseGeminiResponse(responseText: string): MatchResult[] {
     throw new Error('Gemini response is not a JSON array');
   }
 
-  // Validate and sanitize each match result
+  // Validate and sanitize each match result with multi-dimensional scoring support
   return parsed.map((item: Record<string, unknown>) => {
-    if (typeof item.match_score !== 'number' || item.match_score < 0 || item.match_score > 100) {
+    const rawScore = Number(item.match_score);
+    if (isNaN(rawScore) || rawScore < 0 || rawScore > 100) {
       throw new Error(`Invalid match_score: ${item.match_score}`);
     }
+
+    const technicalScore = item.technical_score !== undefined
+      ? Math.round(Math.max(0, Math.min(100, Number(item.technical_score) || 0)))
+      : Math.round(rawScore);
+
+    const maturityScore = item.maturity_score !== undefined
+      ? Math.round(Math.max(0, Math.min(100, Number(item.maturity_score) || 0)))
+      : Math.round(rawScore);
+
+    const budgetScore = item.budget_score !== undefined
+      ? Math.round(Math.max(0, Math.min(100, Number(item.budget_score) || 0)))
+      : Math.round(rawScore);
+
     if (!Array.isArray(item.pros) || item.pros.length === 0) {
       throw new Error('pros must be a non-empty array');
     }
@@ -128,7 +175,10 @@ export function parseGeminiResponse(responseText: string): MatchResult[] {
     return {
       startup_id: String(item.startup_id),
       startup_name: String(item.startup_name),
-      match_score: Math.round(item.match_score),
+      technical_score: technicalScore,
+      maturity_score: maturityScore,
+      budget_score: budgetScore,
+      match_score: Math.round(rawScore),
       pros: item.pros.map(String),
       cons: item.cons.map(String),
       detailed_explanation: String(item.detailed_explanation),
@@ -212,7 +262,13 @@ export async function runMatchmaking(
     });
 
     try {
-      const model = genAI.getGenerativeModel({ model: modelName });
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: matchmakingResponseSchema,
+        },
+      });
       const result = await model.generateContent(prompt);
       const response = result.response;
       const text = response.text();

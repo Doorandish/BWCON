@@ -1,5 +1,6 @@
 import { GET as getStartups, POST as postStartup } from '@/app/api/startups/route';
 import { GET as getChallenges, POST as postChallenge } from '@/app/api/challenges/route';
+import { GET as getMatchmaking, POST as postMatchmaking } from '@/app/api/matchmaking/route';
 import { NextRequest } from 'next/server';
 
 // Mock connectDB and Mongoose models
@@ -7,29 +8,89 @@ jest.mock('@/lib/db/connection', () => ({
   connectDB: jest.fn().mockResolvedValue({}),
 }));
 
-jest.mock('@/lib/db/models/Startup', () => ({
-  find: jest.fn().mockReturnValue({
-    sort: jest.fn().mockReturnValue({
-      lean: jest.fn().mockResolvedValue([
-        { _id: 's1', name: 'Startup One', industry: 'AI', stage: 'mvp' },
-      ]),
-    }),
+const mockStartupFind = jest.fn().mockReturnValue({
+  sort: jest.fn().mockReturnValue({
+    limit: jest.fn().mockResolvedValue([
+      { _id: 's1', name: 'Startup One', industry: 'AI & Robotics', stage: 'mvp' },
+    ]),
+    lean: jest.fn().mockResolvedValue([
+      { _id: 's1', name: 'Startup One', industry: 'AI & Robotics', stage: 'mvp' },
+    ]),
   }),
+});
+
+jest.mock('@/lib/db/models/Startup', () => ({
+  find: (...args: any[]) => mockStartupFind(...args),
   create: jest.fn().mockImplementation((data) => Promise.resolve({ _id: 's2', ...data })),
   insertMany: jest.fn().mockImplementation((data) => {
     return Promise.resolve(data.map((item: any, idx: number) => ({ _id: `s-${idx}`, ...item })));
   }),
 }));
 
+const mockChallengeDoc = {
+  _id: 'c1',
+  companyName: 'Corporate One',
+  challengeTitle: 'Robotics Challenge',
+  industry: 'Robotics',
+  status: 'open',
+  save: jest.fn().mockResolvedValue(true),
+};
+
 jest.mock('@/lib/db/models/CompanyChallenge', () => ({
   find: jest.fn().mockReturnValue({
     sort: jest.fn().mockReturnValue({
       lean: jest.fn().mockResolvedValue([
-        { _id: 'c1', companyName: 'Corporate One', challengeTitle: 'Challenge Title' },
+        { _id: 'c1', companyName: 'Corporate One', challengeTitle: 'Robotics Challenge' },
       ]),
     }),
   }),
+  findById: jest.fn().mockImplementation(() => Promise.resolve(mockChallengeDoc)),
   create: jest.fn().mockImplementation((data) => Promise.resolve({ _id: 'c2', ...data })),
+}));
+
+const mockMatchCreate = jest.fn().mockImplementation((data) => Promise.resolve({ _id: 'm1', ...data }));
+
+jest.mock('@/lib/db/models/Match', () => ({
+  find: jest.fn().mockReturnValue({
+    populate: jest.fn().mockReturnValue({
+      populate: jest.fn().mockReturnValue({
+        sort: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue([
+            {
+              _id: 'm1',
+              matchScore: 92,
+              technicalScore: 95,
+              maturityScore: 88,
+              budgetScore: 90,
+              pros: ['Great fit'],
+              cons: [],
+              detailedExplanation: 'Fit',
+              estimatedCost: '$50k',
+            },
+          ]),
+        }),
+      }),
+    }),
+  }),
+  create: (...args: any[]) => mockMatchCreate(...args),
+  deleteMany: jest.fn().mockResolvedValue({ deletedCount: 1 }),
+}));
+
+jest.mock('@/lib/services/gemini', () => ({
+  runMatchmaking: jest.fn().mockResolvedValue([
+    {
+      startup_id: 's1',
+      startup_name: 'Startup One',
+      technical_score: 95,
+      maturity_score: 88,
+      budget_score: 90,
+      match_score: 92,
+      pros: ['Great fit'],
+      cons: [],
+      detailed_explanation: 'Strong fit',
+      estimated_cost: '$50k',
+    },
+  ]),
 }));
 
 describe('API Route Handlers — Integration Tests', () => {
@@ -116,6 +177,57 @@ describe('API Route Handlers — Integration Tests', () => {
       expect(response.status).toBe(201);
       expect(json.success).toBe(true);
       expect(json.data.companyName).toBe('New Corp');
+    });
+  });
+
+  describe('POST /api/matchmaking', () => {
+    it('triggers matchmaking with pre-filtering and saves multi-dimensional scores', async () => {
+      const req = new NextRequest('http://localhost:3000/api/matchmaking', {
+        method: 'POST',
+        body: JSON.stringify({
+          challengeId: 'c1',
+        }),
+      });
+      const response = await postMatchmaking(req);
+      const json = await response.json();
+
+      expect(response.status).toBe(201);
+      expect(json.success).toBe(true);
+      expect(mockMatchCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          challengeId: 'c1',
+          startupId: 's1',
+          matchScore: 92,
+          technicalScore: 95,
+          maturityScore: 88,
+          budgetScore: 90,
+        })
+      );
+      expect(json.data[0].matchScore).toBe(92);
+      expect(json.data[0].technicalScore).toBe(95);
+    });
+
+    it('returns 400 when challengeId is missing', async () => {
+      const req = new NextRequest('http://localhost:3000/api/matchmaking', {
+        method: 'POST',
+        body: JSON.stringify({}),
+      });
+      const response = await postMatchmaking(req);
+      const json = await response.json();
+      expect(response.status).toBe(400);
+      expect(json.success).toBe(false);
+      expect(json.error).toContain('challengeId is required');
+    });
+  });
+
+  describe('GET /api/matchmaking', () => {
+    it('returns 200 with populated matches list', async () => {
+      const req = new NextRequest('http://localhost:3000/api/matchmaking?challengeId=c1');
+      const response = await getMatchmaking(req);
+      const json = await response.json();
+      expect(response.status).toBe(200);
+      expect(json.success).toBe(true);
+      expect(json.data[0].matchScore).toBe(92);
     });
   });
 });
