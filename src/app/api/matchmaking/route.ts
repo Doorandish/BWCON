@@ -55,37 +55,54 @@ export async function POST(request: NextRequest) {
     challenge.status = 'matching';
     await challenge.save();
 
-    // Context Window Protection (Pre-Filtering)
-    // 1. Extract industry keywords from the challenge
+    // Strict Database Pre-Filtering (MongoDB)
+    // 1. Extract industry tokens
     const industryTokens = (challenge.industry || '')
       .split(/[,/&|]+/)
       .map((t) => t.trim())
       .filter((t) => t.length > 2);
 
-    let startups: IStartup[] = [];
+    // 2. Extract required technologies tokens
+    const techTokens = (challenge.requiredTechnologies || [])
+      .flatMap((t) => t.split(/[,/&|]+/))
+      .map((t) => t.trim())
+      .filter((t) => t.length > 1);
+
+    const queryFilters: Record<string, any>[] = [];
 
     if (industryTokens.length > 0) {
       const industryRegexes = industryTokens.map((t) => new RegExp(t, 'i'));
-      startups = await Startup.find({
-        $or: [
-          { industry: { $in: industryRegexes } },
-          { description: { $in: industryRegexes } },
-        ],
-      })
-        .sort({ updatedAt: -1 })
-        .limit(50);
+      queryFilters.push({ industry: { $in: industryRegexes } });
+      queryFilters.push({ description: { $in: industryRegexes } });
     }
 
-    // 2. Broaden to top 50 most active startups if specific filter yields under 5
-    if (startups.length < 5) {
+    if (techTokens.length > 0) {
+      const techRegexes = techTokens.map((t) => new RegExp(t, 'i'));
+      queryFilters.push({ technologies: { $in: techRegexes } });
+      queryFilters.push({ description: { $in: techRegexes } });
+    }
+
+    let startups: IStartup[] = [];
+
+    // Query with strict limit of 10 candidates to minimize payload & context footprint
+    if (queryFilters.length > 0) {
+      startups = await Startup.find({ $or: queryFilters })
+        .sort({ updatedAt: -1 })
+        .limit(10);
+    }
+
+    // 3. Fallback: If strict filtering yielded under 3 candidates, broaden to top 10 most recent startups
+    if (startups.length < 3) {
       startups = await Startup.find()
         .sort({ updatedAt: -1 })
-        .limit(50);
+        .limit(10);
     }
 
-    addLog('INFO', 'API_GATEWAY', `Pre-filtered ${startups.length} startup candidate(s) within token budget for challenge "${challenge.challengeTitle}".`, {
+    addLog('INFO', 'API_GATEWAY', `Strict Mongoose pre-filter selected ${startups.length} startup(s) (strictly capped at 10) for challenge "${challenge.challengeTitle}".`, {
       challengeIndustry: challenge.industry,
-      candidateCount: startups.length,
+      requiredTechnologies: challenge.requiredTechnologies,
+      candidatesSelected: startups.length,
+      maxCandidateLimit: 10,
       tokenProtectionActive: true,
     });
 

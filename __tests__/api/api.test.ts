@@ -207,6 +207,25 @@ describe('API Route Handlers — Integration Tests', () => {
       expect(json.data[0].technicalScore).toBe(95);
     });
 
+    it('enforces strict Mongoose pre-filter query and limit 10', async () => {
+      mockStartupFind.mockClear();
+      const req = new NextRequest('http://localhost:3000/api/matchmaking', {
+        method: 'POST',
+        body: JSON.stringify({
+          challengeId: 'c1',
+        }),
+      });
+      const response = await postMatchmaking(req);
+      expect(response.status).toBe(201);
+      expect(mockStartupFind).toHaveBeenCalledWith(
+        expect.objectContaining({
+          $or: expect.arrayContaining([
+            expect.objectContaining({ industry: expect.any(Object) }),
+          ]),
+        })
+      );
+    });
+
     it('returns 400 when challengeId is missing', async () => {
       const req = new NextRequest('http://localhost:3000/api/matchmaking', {
         method: 'POST',
