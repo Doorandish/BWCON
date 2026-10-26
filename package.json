@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "jest --passWithNoTests",
+    "seed": "npx ts-node -O '{\"module\":\"commonjs\"}' scripts/seed-startups.ts",
     "prepare": "husky"
   },
   "dependencies": {
