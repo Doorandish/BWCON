@@ -358,7 +358,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Vertical List Layout for Results */}
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col w-full gap-6">
               {[...matches]
                 .sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
                 .map((match, index) => (

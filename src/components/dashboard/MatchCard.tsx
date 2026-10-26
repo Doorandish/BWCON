@@ -39,12 +39,8 @@ export default function MatchCard({
   const [activeTab, setActiveTab] = useState<TabKey>('pros_cons');
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
-    >
-      <GlassCard variant="strong" className="overflow-hidden">
+    <div className="w-full block">
+      <GlassCard variant="strong" className="w-full overflow-hidden p-6 sm:p-7">
         {/* Header Row */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div className="flex-1">
@@ -241,7 +237,7 @@ export default function MatchCard({
                     </span>
                     <span className="text-2xl font-bold gradient-text">{estimatedCost}</span>
                   </div>
-                  <div className="text-xs text-slate-400 sm:max-w-xs">
+                  <div className="text-xs text-slate-400">
                     Estimated commercial commitment for an initial integration milestone or pilot implementation.
                   </div>
                 </motion.div>
@@ -250,6 +246,6 @@ export default function MatchCard({
           </div>
         </div>
       </GlassCard>
-    </motion.div>
+    </div>
   );
 }

@@ -143,8 +143,8 @@ export default function HomePage() {
             ].map((stat, i) => (
               <motion.div
                 key={stat.label}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 + i * 0.1 }}
               >
                 <div className="text-2xl md:text-3xl font-bold gradient-text mb-1">{stat.value}</div>

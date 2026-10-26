@@ -8,9 +8,9 @@ interface MatchSkeletonProps {
 
 export default function MatchSkeleton({ count = 3 }: MatchSkeletonProps) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col w-full gap-6">
       {Array.from({ length: count }).map((_, idx) => (
-        <GlassCard key={idx} variant="strong" className="overflow-hidden p-6 animate-pulse">
+        <GlassCard key={idx} variant="strong" className="w-full overflow-hidden p-6 sm:p-7 animate-pulse">
           {/* Header Skeleton */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
             <div className="flex-1 space-y-2">
