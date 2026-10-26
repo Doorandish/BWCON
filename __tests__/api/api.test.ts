@@ -16,6 +16,9 @@ jest.mock('@/lib/db/models/Startup', () => ({
     }),
   }),
   create: jest.fn().mockImplementation((data) => Promise.resolve({ _id: 's2', ...data })),
+  insertMany: jest.fn().mockImplementation((data) => {
+    return Promise.resolve(data.map((item: any, idx: number) => ({ _id: `s-${idx}`, ...item })));
+  }),
 }));
 
 jest.mock('@/lib/db/models/CompanyChallenge', () => ({
@@ -42,7 +45,7 @@ describe('API Route Handlers — Integration Tests', () => {
   });
 
   describe('POST /api/startups', () => {
-    it('creates a startup and returns 201', async () => {
+    it('creates a single startup and returns 201', async () => {
       const req = new NextRequest('http://localhost:3000/api/startups', {
         method: 'POST',
         body: JSON.stringify({
@@ -56,6 +59,35 @@ describe('API Route Handlers — Integration Tests', () => {
       expect(response.status).toBe(201);
       expect(json.success).toBe(true);
       expect(json.data.name).toBe('New Startup');
+    });
+
+    it('creates batch startups when an array is provided', async () => {
+      const req = new NextRequest('http://localhost:3000/api/startups', {
+        method: 'POST',
+        body: JSON.stringify([
+          {
+            startup_name: 'Batch Startup 1',
+            industry_sector: 'Robotics',
+            core_technologies: 'ROS, C++',
+            maturity_stage: 'Seed',
+          },
+          {
+            startup_name: 'Batch Startup 2',
+            industry_sector: 'FinTech',
+            core_technologies: 'Go, PostgreSQL',
+            maturity_stage: 'Series A',
+          },
+        ]),
+      });
+      const response = await postStartup(req);
+      const json = await response.json();
+      expect(response.status).toBe(201);
+      expect(json.success).toBe(true);
+      expect(json.count).toBe(2);
+      expect(Array.isArray(json.data)).toBe(true);
+      expect(json.data[0].name).toBe('Batch Startup 1');
+      expect(json.data[0].stage).toBe('mvp');
+      expect(json.data[1].stage).toBe('growth');
     });
   });
 
