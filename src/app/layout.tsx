@@ -17,7 +17,7 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <div className="mesh-gradient min-h-screen">
           <Navigation />
-          <main className="pt-24 pb-16 px-4">
+          <main className="pt-32 pb-20 px-4">
             <div className="max-w-7xl mx-auto">
               {children}
             </div>

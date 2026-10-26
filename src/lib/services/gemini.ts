@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { IStartup } from '@/lib/db/models/Startup';
 import { ICompanyChallenge } from '@/lib/db/models/CompanyChallenge';
+import { addLog } from '@/lib/services/logger';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
@@ -132,21 +133,52 @@ export async function runMatchmaking(
 ): Promise<MatchResult[]> {
   const apiKey = process.env.GEMINI_API_KEY || GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is not configured');
+    const errorMsg = 'GEMINI_API_KEY is not configured in process.env. Please configure GEMINI_API_KEY in Render.com or local environment.';
+    addLog('ERROR', 'GEMINI_AI', errorMsg, {
+      hint: 'Get an API key from Google AI Studio and configure GEMINI_API_KEY in your environment variables.',
+    });
+    throw new Error(errorMsg);
   }
 
   if (startups.length === 0) {
+    addLog('WARN', 'GEMINI_AI', 'Matchmaking triggered with 0 available startups in database.', {
+      challengeId: String(challenge._id),
+      challengeTitle: challenge.challengeTitle,
+    });
     return [];
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  addLog('TASK', 'GEMINI_AI', `Running Gemini 2.0 Flash matchmaking evaluation for challenge "${challenge.challengeTitle}" across ${startups.length} candidate startup(s)...`, {
+    challengeTitle: challenge.challengeTitle,
+    company: challenge.companyName,
+    candidateCount: startups.length,
+    model: 'gemini-2.0-flash',
+  });
 
-  const prompt = buildMatchmakingPrompt(challenge, startups);
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-  const result = await model.generateContent(prompt);
-  const response = result.response;
-  const text = response.text();
+    const prompt = buildMatchmakingPrompt(challenge, startups);
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const text = response.text();
 
-  return parseGeminiResponse(text);
+    const matches = parseGeminiResponse(text);
+
+    addLog('INFO', 'GEMINI_AI', `Gemini successfully evaluated and generated ${matches.length} strategic match(es).`, {
+      challengeTitle: challenge.challengeTitle,
+      matchesReturned: matches.length,
+      topScore: matches[0]?.match_score || 0,
+    });
+
+    return matches;
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    addLog('ERROR', 'GEMINI_AI', `Gemini matchmaking evaluation failed: ${errorMsg}`, {
+      rawError: errorMsg,
+      challengeTitle: challenge.challengeTitle,
+    });
+    throw err;
+  }
 }
